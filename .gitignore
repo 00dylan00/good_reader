@@ -1,0 +1,3 @@
+# Ignore everything in these directories
+.env
+bart-large-cnn/
