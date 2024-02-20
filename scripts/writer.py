@@ -72,7 +72,7 @@ def tweet_paper():
     
     tweet_content = f"{paper['title']}\n\n{paper['abstract_summary']}\n{paper['doi_link']}"
     
-    if len(tweet_content) > 280:
+    if len(tweet_content) > 280 | len(paper['abstract_summary']) == 0:
         tweet_content = f"{paper['title']}\n\n{paper['doi_link']}"
 
     # 2. Tweet Paper
@@ -126,7 +126,6 @@ def schedule_tweets():
                 # logging.info(f"Time {schedule_time_str} has already passed. Picking another time.")
                 continue
 # 2. Tweet Papers
-tweet_paper()
 schedule_tweets()   
 
 while True:

@@ -190,7 +190,7 @@ def fetch_recent_papers(query, days_ago=90, n_articles=10000):
                 abstract = (
                     abstract_text.text
                     if abstract_text is not None
-                    else "Abstract not available"
+                    else None
                 )
 
                 papers.append(
@@ -245,6 +245,9 @@ df_papers = pd.DataFrame(papers)
 from transformers import pipeline
 import os, sys
 from tqdm import tqdm
+import spacy
+# Load the spaCy model, assuming English language for this example
+nlp = spacy.load("en_core_web_sm")
 
 # variables
 prompt = "Summarize the following abstract from a scientific article: %s"
@@ -262,21 +265,27 @@ abstract_summaries = list()
 for index, row in tqdm(df_papers.iterrows()):
     if row["abstract"] is not None:
         abstract_summary = summarizer(
-            prompt % row["abstract"], max_length=30, min_length=15, do_sample=False
+            prompt % row["abstract"], max_length=40, min_length=10, do_sample=False
         )[0]["summary_text"]
-        # Sometimes we will have it cutting the summary in the middle of a sentence
-        # which we don't want
-        sentences = abstract_summary.split(".")
-        all_except_last = sentences[:-1]
-        join_except_last = ".".join(all_except_last)
-        if len(join_except_last) > 0 & (abstract_summary != "Abstract not available"):
-            abstract_summary = join_except_last + "."
+
+        # Use spaCy for sentence detection
+        doc = nlp(abstract_summary)
+        sentences = list(doc.sents)
+        
+        # Process based on the number of sentences
+        if len(sentences) > 1:
+            # Join all sentences except the last incomplete one
+            abstract_summary = '. '.join(sentence.text for sentence in sentences[:-1])
+        elif len(sentences) == 1:
+            # Ensure the single sentence ends with a period
+            abstract_summary = sentences[0].text 
         else:
-            # If the summary has not one complete sentence, we will 
-            # drop it completely ! ! !
-            abstract_summary = None 
+            # No sentences detected, unlikely but handled
+            abstract_summary = None
     else:
         abstract_summary = None
+
+    print(abstract_summary)
     abstract_summaries.append(abstract_summary)
 
 df_papers["abstract_summary"] = abstract_summaries
