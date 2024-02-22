@@ -20,6 +20,7 @@ logging.basicConfig(level=logging.INFO)
 
 # variables
 n_daily_tweets = random.choice([1,2,3])  # Number of tweets per day
+n_daily_tweets = 3
 
 # functions
 def load_tweeted_pmids():
@@ -74,6 +75,11 @@ def tweet_paper():
     
     if len(tweet_content) > 280 | len(paper['abstract_summary']) == 0:
         tweet_content = f"{paper['title']}\n\n{paper['doi_link']}"
+    
+    if len(tweet_content) > 280:
+        _length = len(f"\n\n{paper['doi_link']}")
+        k = 280 - _length - 10
+        tweet_content = f"{paper['title'][:k]}. . .\n\n{paper['doi_link']}"
 
     # 2. Tweet Paper
     # Attempt to tweet the content
@@ -110,7 +116,7 @@ def schedule_tweets():
     current_time = datetime.now()
     for _ in range(n_daily_tweets):  # Schedule 3 tweets per day
         while True:
-            hour = random.randint(8, 18 )
+            hour = random.randint(8, 11 )
             minute = random.randint(0, 59)
             schedule_time_str = f"{hour:02d}:{minute:02d}"
             # Convert the schedule time string to a datetime object for today
