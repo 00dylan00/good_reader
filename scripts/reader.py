@@ -32,8 +32,8 @@ from tqdm.contrib.concurrent import (
 )  # Import process_map for multiprocessing
 
 # variables
-min_citations = 1 
-
+min_citations = 1
+days_ago = 400
 journals = [
     "Bioinformatics",
     "BMC Bioinformatics",
@@ -46,32 +46,32 @@ journals = [
     "IEEE/ACM Transactions on Computational Biology and Bioinformatics",
     "Computational and Structural Biotechnology Journal",
     "Briefings in Bioinformatics",
-    "Systems Biology and Applications",
-    "BioSystems",
+    # "Systems Biology and Applications",
+    # "BioSystems",
     "Algorithms for Molecular Biology",
     "BioData Mining",
-    "Proteins: Structure, Function, and Bioinformatics",
-    "Molecular Systems Biology",
-    "Cell Systems",
-    "GigaScience",
+    # "Proteins: Structure, Function, and Bioinformatics",
+    # "Molecular Systems Biology",
+    # "Cell Systems",
+    # "GigaScience",
     "Artificial Intelligence in Medicine",
     "Journal of Artificial Intelligence Research",
-    "Frontiers in Bioengineering and Biotechnology",  # AI applications
+    # "Frontiers in Bioengineering and Biotechnology",  # AI applications
     "Pattern Recognition in Bioinformatics",
-    "Synthetic and Systems Biotechnology",  # AI applications
+    # "Synthetic and Systems Biotechnology",  # AI applications
     "Neural Networks",  # Applications in bioinformatics
     "Machine Learning in Bioinformatics",
     "International Journal of Data Mining and Bioinformatics",
     "Genomics, Proteomics & Bioinformatics",
     "Bioinformatics and Biology Insights",
     "Applied Soft Computing",  # Relevant for AI applications in bioinformatics
-    "Evolutionary Bioinformatics",
+    # "Evolutionary Bioinformatics",
     "Journal of Machine Learning Research",  # Applications in bioinformatics
-    "Knowledge-Based Systems",  # Relevant for AI applications in bioinformatics
-    "BMC Systems Biology",  # AI applications in systems biology
+    # "Knowledge-Based Systems",  # Relevant for AI applications in bioinformatics
+    # "BMC Systems Biology",  # AI applications in systems biology
     "Nature Machine Intelligence",  # AI with applications in bioinformatics and biotechnology
-    "Nature",
-    "Nature Biomedical Engineering",  # While broader, it includes significant bioinformatics research.
+    # "Nature",
+    # "Nature Biomedical Engineering",  # While broader, it includes significant bioinformatics research.
 ]
     # "Nature Biomedical Engineering",  # While broader, it includes significant bioinformatics research.
     # "Patterns (Cell Press)",  # Focuses on data science that impacts science and society, including bioinformatics.
@@ -123,7 +123,7 @@ def fetch_citations_for_papers(papers):
     return papers
 
 
-def fetch_recent_papers(query, days_ago=90, n_articles=10000):
+def fetch_recent_papers(query, days_ago=90, n_articles=100000000):
     """
     Fetch recent papers from PubMed based on a query and include citation counts.
     """
@@ -217,13 +217,13 @@ def load_tweeted_pmids():
 tweeted_pmids = load_tweeted_pmids()
 
 # 1.2 Fetching Recent Papers
-papers = fetch_recent_papers(query)
+papers = fetch_recent_papers(query, days_ago=days_ago)
 logging.info(f"Nº of papers: {len(papers)}")
 
 # 1.3 Fetching Citation Counts
 papers = fetch_citations_for_papers(papers)
 logging.info(
-    f"Nº of papers w/ citations in less than 3 months: {len([p for p in papers if p['citations'] > 0])}"
+    f"Nº of papers w/ citations in less than {days_ago} days : {len([p for p in papers if p['citations'] > 0])}"
 )
 
 # 1.4 Filter Papers
