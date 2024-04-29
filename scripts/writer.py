@@ -71,25 +71,62 @@ def tweet_paper():
         return
     paper = available_papers.sample(1).iloc[0]  # Randomly select an untweeted paper
 
-    if isinstance(paper['abstract_summary'], str):
+    min_abstract_length = 60
+    # check if the paper has an abstract
+    if isinstance(paper["abstract_summary"], str):
+
+        # check there is room for abstract ! ! !
         tweet_content = f"{paper['title']}\n{paper['doi_link']}"
 
-        if len(tweet_content) > 280:
-            _length = len(f"\n\n{paper['doi_link']}")
-            k = 280 - _length - 10
-            tweet_content = f"{paper['title'][:k]}. . .\n\n{paper['doi_link']}"
+        # check if there is room for abstract
+        if len(tweet_content) < 280 - min_abstract_length:
+            # There is room for an abstract ! ! !
+            room_available = 280 - len(tweet_content) - 2  # +2 \n\n
+            # check if there is room for entire abstract summary
+            if len(paper["abstract_summary"]) < room_available:
+                logging.info("Title + abstract summary")
+                tweet_content = f"{paper['title']}\n\n{paper['abstract_summary']}\n{paper['doi_link']}"
+            # check if there is room for a truncated abstract summary
+            else:
+                logging.info("Title + truncated abstract summary")
+                tweet_content = f"{paper['title']}\n\n{paper['abstract_summary'][:room_available-5]}...\n{paper['doi_link']}"
 
+        else:
+            # check if there is room for a title ! ! !
 
+            if len(tweet_content) < 280:
+                logging.info("Title")
+                # redundant
+                tweet_content = f"{paper['title']}\n{paper['doi_link']}"
+            else:
+                logging.info("Truncated title")
+                space_left = 280 - len(tweet_content)
+                tweet_content = (
+                    f"{paper['title'][:space_left-4]}...\n{paper['doi_link']}"
+                )
+
+        assert (
+            len(tweet_content) <= 280
+        ), f"Tweet content too long: {len(tweet_content)} characters"
+
+    # If the paper doesn't have an abstract, tweet the title and DOI link
     else:
-        tweet_content = f"{paper['title']}\n\n{paper['abstract_summary']}\n{paper['doi_link']}"
+        # check there is room for abstract ! ! !
+        tweet_content = f"{paper['title']}\n{paper['doi_link']}"
+        # check if there is room for a title ! ! !
+        if len(tweet_content) < 280:
+            logging.info("Title")
 
-        if len(tweet_content) > 280:
+            # redundant
             tweet_content = f"{paper['title']}\n{paper['doi_link']}"
+        else:
+            logging.info("Truncated title")
+            space_left = 280 - len(tweet_content)
+            tweet_content = f"{paper['title'][:space_left-4]}...\n{paper['doi_link']}"
 
-        if len(tweet_content) > 280:
-            _length = len(f"\n\n{paper['doi_link']}")
-            k = 280 - _length - 10
-            tweet_content = f"{paper['title'][:k]}. . .\n{paper['doi_link']}"
+        assert (
+            len(tweet_content) <= 280
+        ), f"Tweet content too long: {len(tweet_content)} characters"
 
 
 
@@ -127,35 +164,38 @@ def tweet_paper():
 def schedule_tweets(n_daily_tweets=5):
     current_time = datetime.now()
     for _ in range(n_daily_tweets):
+        attempts = 0
         while True:
-            hour = random.randint(8, 14 )
+            hour = random.randint(8, 17)
             minute = random.randint(0, 59)
             schedule_time_str = f"{hour:02d}:{minute:02d}"
-            # Convert the schedule time string to a datetime object for today
             schedule_time = datetime.strptime(f"{current_time.strftime('%Y-%m-%d')} {schedule_time_str}", '%Y-%m-%d %H:%M')
 
-            # Check if the scheduled time is in the future
-            if schedule_time > current_time:
-                schedule.every().day.at(schedule_time_str).do(tweet_paper)
+            if schedule_time > datetime.now():  # Always compare to the current moment
+                schedule.every().day.at(schedule_time_str).do(tweet_paper).tag('daily-tweets')
                 logging.info(f"Scheduled a tweet at {schedule_time_str}")
-                break  # Exit the while loop once a future time is scheduled
+                break
             else:
-                # This time has already passed today, pick another time
+                attempts += 1
                 # logging.info(f"Time {schedule_time_str} has already passed. Picking another time.")
-                continue
+                if attempts > 1000:  # Prevent infinite loop
+                    logging.warning("Too many failed attempts to find a future time. Skipping this tweet.")
+                    break
 
 def reset_and_schedule_tweets():
+    # Clearing schedules tagged as 'daily-tweets'
     schedule.clear('daily-tweets')
+    logging.info("Cleared all scheduled tweets.")
     schedule_tweets()
 
-# 2. Tweet Papers
-# Schedule the reset function to run daily at midnight
+# 2.
+# Schedule the reset function to run daily at 00:01
 schedule.every().day.at("00:01").do(reset_and_schedule_tweets)
 
 # Start by scheduling today's tweets
 reset_and_schedule_tweets()
 
-# Main loop to keep the script running
+# Main loop to keep the script running and handle scheduled tasks
 while True:
     schedule.run_pending()
     time.sleep(1)

@@ -33,7 +33,7 @@ from tqdm.contrib.concurrent import (
 
 # variables
 min_citations = 1
-days_ago = 400
+days_ago = 460
 journals = [
     "Bioinformatics",
     "BMC Bioinformatics",
@@ -275,13 +275,14 @@ for index, row in tqdm(df_papers.iterrows()):
         # Process based on the number of sentences
         if len(sentences) > 1:
             # Join all sentences except the last incomplete one
-            abstract_summary = '. '.join(sentence.text for sentence in sentences[:-1])
+            abstract_summary = ' '.join(sentence.text for sentence in sentences[:-1])
         elif len(sentences) == 1:
             # Ensure the single sentence ends with a period
             abstract_summary = sentences[0].text 
         else:
             # No sentences detected, unlikely but handled
             abstract_summary = None
+            logging.info("No sentences detected in the summary.")
     else:
         abstract_summary = None
 
